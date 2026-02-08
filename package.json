@@ -1,0 +1,28 @@
+{
+  "name": "context-tools-mcp",
+  "version": "1.0.0",
+  "description": "Universal MCP server with documentation, project helper, and DevOps tools. Compatible with Cursor IDE and other MCP clients.",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "test:mcp": "node scripts/test-mcp.js"
+  },
+  "keywords": [
+    "mcp",
+    "cursor",
+    "ide",
+    "model-context-protocol"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

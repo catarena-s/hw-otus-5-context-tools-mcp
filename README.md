@@ -1,0 +1,137 @@
+# Context Tools MCP Server
+
+Универсальный MCP (Model Context Protocol) сервер, предоставляющий инструменты для работы с документацией, навигации по проекту и выполнения безопасных команд. Совместим с любыми MCP-клиентами, включая Cursor IDE, Claude Desktop и другие.
+
+## Описание сервера
+
+Этот MCP-сервер предоставляет набор инструментов (tools) для работы с кодом и контекстом проекта. Поиск и сравнение строк поддерживают **русский язык и Unicode** (нормализация NFC, учёт пунктуации, сортировка с учётом локали).
+
+- **Doc Context Tools**: Поиск и чтение документации из локальных markdown-файлов
+- **Project Helper Tools**: Навигация по структуре проекта, поиск файлов
+- **DevOps Tools**: Выполнение безопасных команд в контексте проекта
+
+## Доступные Tools
+
+| Tool | Описание | Параметры | Пример вызова |
+|------|----------|-----------|----------------|
+| `read_documentation` | Поиск и чтение документации из локальных markdown-файлов проекта. | `query`* (string) — поисковый запрос;<br>`category` (string) — папка/категория;<br>`maxResults` (number, по умолчанию 10) | **Вызов:** `{ "query": "API", "category": "docs", "maxResults": 5 }`<br>**Результат:** массив объектов `{ filePath, title, content, relevanceScore, lineNumber }` |
+| `search_project_files` | Поиск файлов по имени, содержимому или типу. | `searchType`* ("filename" \| "content" \| "filetype");<br>`query`* (string);<br>`rootDir` (string);<br>`fileExtensions` (string[]) | **Вызов:** `{ "searchType": "content", "query": "function calculate", "fileExtensions": [".ts", ".js"] }`<br>**Результат:** массив `{ filePath, matches, fileType, lineNumbers }` |
+| `get_project_structure` | Получение структуры проекта (дерево папок и файлов). | `rootDir` (string);<br>`maxDepth` (number, по умолчанию 5);<br>`excludePatterns` (string[]) | **Вызов:** `{ "rootDir": "src", "maxDepth": 3, "excludePatterns": ["node_modules", ".git"] }`<br>**Результат:** объект `{ name, type, size?, children? }` (дерево) |
+| `execute_command` | Выполнение безопасных команд в контексте проекта (whitelist). | `command`* (string);<br>`args` (string[]);<br>`workingDir` (string) | **Вызов:** `{ "command": "npm", "args": ["run", "build"], "workingDir": "." }`<br>**Результат:** объект `{ stdout, stderr, exitCode, executionTime }` |
+
+\* обязательный параметр
+
+## Ограничения доступа
+
+### Файловая система
+
+- **Доступ только в пределах корневой папки проекта**: Сервер не может читать файлы вне корневой директории проекта.
+
+- **Определение корня проекта**: По умолчанию корень берётся по пути к запущенному скрипту (родитель каталога `dist/`), а не по `process.cwd()`, чтобы поиск и структура работали в каталоге проекта даже при запуске из Cursor с другим рабочим каталогом. При необходимости задайте корень вручную переменной окружения **`MCP_PROJECT_ROOT`** (абсолютный путь к папке проекта).
+- **Исключение чувствительных файлов**: Следующие файлы и паттерны автоматически исключаются из доступа:
+  - `.env`, `.env.*` - файлы с переменными окружения
+  - `*.key`, `*.pem`, `*.p12`, `*.pfx` - файлы с ключами
+  - `config/secrets.*` - файлы с секретами
+  - `secrets/` - директория с секретами
+  - `.git/` - директория Git
+  - `node_modules/`, `dist/`, `build/`, `.next/`, `.cache/`, `logs/` - служебные директории
+
+### Команды (DevOps Tool)
+
+- **Whitelist разрешенных команд**: Разрешены только следующие команды:
+  - **npm/yarn/pnpm**: `install`, `run`, `test`, `build`, `start`, `version`, `list`
+  - **git** (только чтение): `status`, `log`, `diff`, `show`, `branch`, `remote`, `config`
+  - **Build команды**: `npm run build`, `yarn build`, `pnpm build`
+
+- **Запрещенные команды**: Следующие команды никогда не разрешаются:
+  - `rm`, `rmdir`, `del`, `delete` - удаление файлов
+  - `format`, `fdisk`, `mkfs` - форматирование дисков
+  - `shutdown`, `reboot` - системные команды
+  - `sudo`, `su` - повышение привилегий
+
+- **Ограничения рабочей директории**: Команды могут выполняться только в пределах корневой директории проекта
+
+## Установка и запуск
+
+1. Установите зависимости:
+```bash
+npm install
+```
+
+2. Соберите проект:
+```bash
+npm run build
+```
+
+3. Запуск сервера:
+```bash
+npm start
+```
+
+Или напрямую:
+```bash
+node dist/index.js
+```
+
+**Примечание:** Сервер использует stdio транспорт и предназначен для запуска MCP-клиентами (Cursor, Claude Desktop и т.д.). Для ручного тестирования используйте MCP-клиент или проверьте логи в `logs/mcp-calls.log`.
+
+## Интеграция с MCP-клиентами
+
+### Cursor IDE
+
+Подробные инструкции по интеграции с Cursor IDE см. в файле [cursor-install.md](./cursor-install.md).
+
+## Логирование
+
+Все вызовы tools логируются в структурированном JSON формате в файл `logs/mcp-calls.log`.
+
+### Формат лога:
+```json
+{
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "tool": "read_documentation",
+  "parameters": { "query": "API" },
+  "executionTimeMs": 150,
+  "status": "success",
+  "resultSize": 5
+}
+```
+
+### Характеристики логирования:
+- **Ротация логов**: Максимальный размер файла 10MB, хранение до 5 файлов
+- **Уровни логирования**: debug (детальные параметры), info (нормальная работа), error (ошибки)
+- **Безопасность**: Чувствительные данные (пароли, токены) автоматически скрываются в логах
+
+### Просмотр логов:
+Логи находятся в директории `logs/`:
+- `logs/mcp-calls.log` - текущий лог
+- `logs/mcp-calls.1.log` - предыдущий лог (после ротации)
+- и т.д.
+
+## Ссылки на код
+
+### 1. MCP‑сервер:
+  - инициализация и запуск — [`src/index.ts`](src/index.ts) (L8–L37); 
+  - регистрация инструментов и обработка вызовов — [`src/server.ts`](src/server.ts) (L17–L166).
+
+### 2. Инструменты (реализация, логирование, пример лога):
+
+| Tool | Реализация | Логирование (успех / ошибка) | Пример записи в логе |
+|------|------------|------------------------------|----------------------|
+| `read_documentation` | [`src/tools/doc-context.ts`](src/tools/doc-context.ts) L16–L124 | L93–L99 / L114–L121 | `"tool": "read_documentation"`, `"status": "success"`, `"resultSize"` — см. формат выше |
+| `search_project_files` | [`src/tools/project-helper.ts`](src/tools/project-helper.ts) L19–L170 | L138–L144 / L159–L166 | `"tool": "search_project_files"` |
+| `get_project_structure` | [`src/tools/project-structure.ts`](src/tools/project-structure.ts) L14–L146 | L115–L121 / L138–L144 | `"tool": "get_project_structure"` |
+| `execute_command` | [`src/tools/devops-tool.ts`](src/tools/devops-tool.ts) L14–L111 | L76–L85 / L100–L107 | `"tool": "execute_command"` |
+
+### 3. Общая запись в лог: 
+[`src/lib/logger.ts`](src/lib/logger.ts) — `logToolCall` L121–L145, запись в файл L64–L89, ротация L92–L118.
+
+### 4. Пример запроса и подтверждение вызова tool:
+запрос «Найди документацию по API» должен вызывать tool `read_documentation`. Подтверждение — запись в `logs/mcp-calls.log` с полем `"tool": "read_documentation"` и параметрами вызова. Файл хранится в репозитории в каталоге `logs/` (каталог в `.gitignore`, при проверке лог создаётся после первого вызова). 
+
+Дополнительные проверочные запросы — в [TEST_REQUESTS.md](TEST_REQUESTS.md).
+
+### 5. Контракт результатов tool (формат ответа):
+- описание полей результата по каждому tool — [раздел «Доступные Tools»](#доступные-tools); 
+- типы TypeScript — [`src/lib/types.ts`](src/lib/types.ts) (L5–L68: параметры и результаты каждого tool).
+
