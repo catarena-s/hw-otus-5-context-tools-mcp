@@ -153,7 +153,7 @@ node dist/index.js
 
 **Подтверждение подключения** — MCP-сервер «context-tools-mcp» запущен, четыре tools доступны в панели IDE:
 
-![MCP Server: context-tools-mcp с инструментами read_documentation, search_project_files, get_project_structure, execute_command](docs/mcp-server-screenshot.png)
+![MCP Server: context-tools-mcp с инструментами read_documentation, search_project_files, get_project_structure, execute_command](docs/mcp-server-screenshot.jpg)
 
 ## Логирование
 
