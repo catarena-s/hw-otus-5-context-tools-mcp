@@ -3,8 +3,10 @@ dist/
 logs/
 .env
 .env.*
+!.env.example
 *.key
 *.pem
 *.log
+!docs/sample-mcp-calls.log
 .DS_Store
 *.tsbuildinfo
