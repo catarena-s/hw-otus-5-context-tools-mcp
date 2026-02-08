@@ -12,14 +12,64 @@
 
 ## Доступные Tools
 
-| Tool | Описание | Параметры | Пример вызова |
-|------|----------|-----------|----------------|
-| `read_documentation` | Поиск и чтение документации из локальных markdown-файлов проекта. | `query`* (string) — поисковый запрос;<br>`category` (string) — папка/категория;<br>`maxResults` (number, по умолчанию 10) | **Вызов:** `{ "query": "API", "category": "docs", "maxResults": 5 }`<br>**Результат:** массив объектов `{ filePath, title, content, relevanceScore, lineNumber }` |
-| `search_project_files` | Поиск файлов по имени, содержимому или типу. | `searchType`* ("filename" \| "content" \| "filetype");<br>`query`* (string);<br>`rootDir` (string);<br>`fileExtensions` (string[]) | **Вызов:** `{ "searchType": "content", "query": "function calculate", "fileExtensions": [".ts", ".js"] }`<br>**Результат:** массив `{ filePath, matches, fileType, lineNumbers }` |
-| `get_project_structure` | Получение структуры проекта (дерево папок и файлов). | `rootDir` (string);<br>`maxDepth` (number, по умолчанию 5);<br>`excludePatterns` (string[]) | **Вызов:** `{ "rootDir": "src", "maxDepth": 3, "excludePatterns": ["node_modules", ".git"] }`<br>**Результат:** объект `{ name, type, size?, children? }` (дерево) |
-| `execute_command` | Выполнение безопасных команд в контексте проекта (whitelist). | `command`* (string);<br>`args` (string[]);<br>`workingDir` (string) | **Вызов:** `{ "command": "npm", "args": ["run", "build"], "workingDir": "." }`<br>**Результат:** объект `{ stdout, stderr, exitCode, executionTime }` |
+| Tool | Описание | Параметры |
+|------|----------|-----------|
+| `read_documentation` | Поиск и чтение документации из локальных markdown-файлов проекта. | `query`* (string) — поисковый запрос;<br>`category` (string) — папка/категория;<br>`maxResults` (number, по умолчанию 10) |
+| `search_project_files` | Поиск файлов по имени, содержимому или типу. | `searchType`* (`filename` \| `content` \| `filetype`);<br>`query`* (string);<br>`rootDir` (string);<br>`fileExtensions` (string[]) |
+| `get_project_structure` | Получение структуры проекта (дерево папок и файлов). | `rootDir` (string);<br>`maxDepth` (number, по умолчанию 5);<br>`excludePatterns` (string[]) |
+| `execute_command` | Выполнение безопасных команд в контексте проекта (whitelist). | `command`* (string);<br>`args` (string[]);<br>`workingDir` (string) |
 
 \* обязательный параметр
+
+## Примеры вызова
+
+### `read_documentation`
+
+**Вызов:**
+```
+{
+  "query": "API",
+  "category": "docs",
+  "maxResults": 5
+}
+```
+**Результат:** массив объектов  `{ filePath, title, content, relevanceScore, lineNumber }`
+
+### `search_project_files`
+
+**Вызов:**
+```
+{
+  "searchType": "content",
+  "query": "function calculate",
+  "fileExtensions": [".ts", ".js"]
+}
+```
+**Результат:**  массив  `{ filePath, matches, fileType, lineNumbers }`
+
+### `get_project_structure`
+
+**Вызов:**
+```
+{
+   "rootDir": "src",
+   "maxDepth": 3,
+   "excludePatterns": ["node_modules", ".git"]
+}
+```
+**Результат:** объект  `{ name, type, size?, children? }`
+
+### `execute_command`
+
+**Вызов:**
+```
+{
+  "command": "npm",
+  "args": ["run", "build"],
+  "workingDir": "."
+}
+```
+**Результат:** объект  `{ stdout, stderr, exitCode, executionTime }`
 
 ## Ограничения доступа
 
